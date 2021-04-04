@@ -172,7 +172,11 @@ function calcMountain(s,maxDim=Infinity){
     var dimensions=1;
     while (dimensions<=maxDim){
       var uppers=calcDifference(m);
-      if (uppers.arr.length<1||sumArray(uppers.arr[uppers.arr.length-1].coord)!=lastPosition||!uppers.arr[uppers.arr.length-1].value) break;
+      if (IDKWHATTOCALLTHIS){
+        if (uppers.arr.length<1) break;
+      }else{
+        if (uppers.arr.length<1||sumArray(uppers.arr[uppers.arr.length-1].coord)!=lastPosition||!uppers.arr[uppers.arr.length-1].value) break;
+      }
       var upperm=calcMountain(uppers,dimensions);
       var upperdim=upperm.dim;
       var raisedupperm=upperm;
@@ -206,12 +210,19 @@ function calcDifference(m){
       rightLegPositions.push(sumArray(m.arr[i].coord));
     }
   }else{
-    var pn=findHighestWithPosition(m,getLastPosition(m));
-    while (pn){
-      rightLegPositions.unshift(sumArray(pn.coord));
-      var ppn=parent(m,pn);
-      if (!ppn) ppn=leftLeg(m,pn);
-      pn=ppn;
+    if (IDKWHATTOCALLTHIS2){
+      for (var i=0;i<=getLastPosition(m);i++){
+        var node=findHighestWithPosition(m,i);
+        if (node) rightLegPositions.push(i);
+      }
+    }else{
+      var pn=findHighestWithPosition(m,getLastPosition(m));
+      while (pn){
+        rightLegPositions.unshift(sumArray(pn.coord));
+        var ppn=parent(m,pn);
+        if (!ppn) ppn=leftLeg(m,pn);
+        pn=ppn;
+      }
     }
     for (var i=0;i<rightLegPositions.length;i++){
       var node=findHighestWithPosition(m,rightLegPositions[i]);
@@ -303,8 +314,8 @@ function findByCoord(m,coord,d){
   return findByIndex(m,indexFromCoord(m,coord,d));
 }
 function getLastPosition(m){
-  while (m.dim>0) m=m.arr[m.arr.length-1];
-  return m.position;
+  while (m.dim>1) m=m.arr[0];
+  return m.arr[m.arr.length-1].position;
 }
 function findHighestWithPosition(m,position){
   if (m.dim==0){
@@ -369,7 +380,8 @@ function updateMountainString(){
     findByCoord(calculatedMountain,[j]).strexp=getstrexp(nums[j]);
   }
 }
-var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE"];
+var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2"];
+var optionsWhichAffectMountain=["input","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2"];
 var input="";
 var inputc="";
 var ROWHEIGHT=32;
@@ -378,16 +390,25 @@ var LINETHICKNESS=2;
 var NUMBERSIZE=10;
 var NUMBERTHICKNESS=400;
 var LINEPLACE=1;
+var MAXDIMENSIONS=10;
+var IDKWHATTOCALLTHIS=true;
+var IDKWHATTOCALLTHIS2=true;
 var inputFocused=false;
 var timesDrawn=0;
 var finalDrawn=0;
 var doneDrawn=0;
 function draw(recalculate){
-  var inputChanged=input!=dg("input").value;
+  var inputChanged=false;
   var optionChanged=false;
   for (var i of options){
-    if (window[i]!=dg(i).value) optionChanged=true;
-    window[i]=dg(i).value;
+    var newValue;
+    if (dg(i).type=="number") newValue=dg(i).value;
+    else if (dg(i).type=="text") newValue=dg(i).value;
+    else if (dg(i).type=="range") newValue=dg(i).value;
+    else if (dg(i).type=="checkbox") newValue=dg(i).checked;
+    if (window[i]!=newValue) optionChanged=true;
+    if (window[i]!=newValue&&optionsWhichAffectMountain.indexOf(i)!=-1) inputChanged=true;
+    window[i]=newValue;
   }
   var curpos=form.input.selectionStart;
   var curendpos=form.input.selectionEnd;
@@ -401,7 +422,7 @@ function draw(recalculate){
   }
   if (!optionChanged&&inputc==newinputc) return;
   inputc=newinputc;
-  if (recalculate&&inputChanged) calculatedMountain=calcMountain(inputc,10);
+  if (recalculate&&inputChanged) calculatedMountain=calcMountain(inputc,+MAXDIMENSIONS);
   else updateMountainString();
   var bounds=[];
   for (var i=0;i<=Math.max(calculatedMountain.dim,2);i++){
@@ -450,7 +471,7 @@ function draw(recalculate){
         var mm=findByIndex(calculatedMountain,renderingindex.slice(d+1,-1).reverse());
         lasts[d]=bounds[d][renderingindex.slice(d).join(",")];
         if (cycles){
-          var lines=Math.floor((d+1)/2);
+          var lines=Math.floor(d/2);
           if (d%2){
             ctx.beginPath();
             for (var i=0;i<lines;i++){
@@ -627,7 +648,12 @@ function load(){
   }finally{ //detailed
     console.log(state);
     for (var i of options){
-      if (state[i]) dg(i).value=state[i];
+      if (state[i]){
+        if (dg(i).type=="number") dg(i).value=state[i];
+        else if (dg(i).type=="text") dg(i).value=state[i];
+        else if (dg(i).type=="range") dg(i).value=state[i];
+        else if (dg(i).type=="checkbox") dg(i).checked=state[i];
+      }
     }
   }
 }
