@@ -191,7 +191,7 @@ function calcMountain(s,maxDim=Infinity){
       raisedupperm.arr.unshift(m);
       m=raisedupperm;
       dimensions++;
-      if (!(uppers.arr[uppers.arr.length-1].value>1)) break;
+      if (!IDKWHATTOCALLTHIS&&!(uppers.arr[uppers.arr.length-1].value>1)) break;
     }
     return m;
   }
