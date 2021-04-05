@@ -380,7 +380,7 @@ function updateMountainString(){
     findByCoord(calculatedMountain,[j]).strexp=getstrexp(nums[j]);
   }
 }
-var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2"];
+var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2","STACKMODE"];
 var optionsWhichAffectMountain=["input","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2"];
 var input="";
 var inputc="";
@@ -393,6 +393,7 @@ var LINEPLACE=1;
 var MAXDIMENSIONS=10;
 var IDKWHATTOCALLTHIS=true;
 var IDKWHATTOCALLTHIS2=true;
+var STACKMODE=false;
 var inputFocused=false;
 var timesDrawn=0;
 var finalDrawn=0;
@@ -424,109 +425,168 @@ function draw(recalculate){
   inputc=newinputc;
   if (recalculate&&inputChanged) calculatedMountain=calcMountain(inputc,+MAXDIMENSIONS);
   else updateMountainString();
-  var bounds=[];
-  for (var i=0;i<=Math.max(calculatedMountain.dim,2);i++){
-    bounds.push({});
-  }
-  for (var cycles=0;cycles<2;cycles++){
-    var renderingindex=[];
-    var lasts=[];
-    for (var i=0;i<=calculatedMountain.dim;i++){
-      renderingindex.push(0);
-      lasts.push(null);
-    }
-    if (cycles){
-      //resize
-      canvas.width=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].r;
-      canvas.height=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].b;
-      ctx.fillStyle="white"; //clear
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle="black";
-      ctx.strokeStyle="black";
-      ctx.lineWidth=+LINETHICKNESS;
-      ctx.font=NUMBERTHICKNESS+" "+NUMBERSIZE+"px Arial";
-    }
-    while (true){
-      var mm=findByIndex(calculatedMountain,renderingindex.slice(2,-1).reverse());
-      if (cycles){
-        render2Dmountain(mm,bounds[2][renderingindex.slice(2).join(",")].l,bounds[2][renderingindex.slice(2).join(",")].t);
-      }else{
-        bounds[2][renderingindex.slice(2).join(",")]={l:0,t:0};
-        for (var d=2;d<calculatedMountain.dim;d+=2){
-          if (lasts[d]){
-            bounds[2][renderingindex.slice(2).join(",")].l=lasts[d].r+ +COLUMNWIDTH;
-            break;
-          }
-        }
-        for (var d=3;d<calculatedMountain.dim;d+=2){
-          if (lasts[d]){
-            bounds[2][renderingindex.slice(2).join(",")].t=lasts[d].b+ +ROWHEIGHT;
-            break;
-          }
-        }
-        bounds[2][renderingindex.slice(2).join(",")].r=bounds[2][renderingindex.slice(2).join(",")].l+get2DmountainRenderedSize(mm).x;
-        bounds[2][renderingindex.slice(2).join(",")].b=bounds[2][renderingindex.slice(2).join(",")].t+get2DmountainRenderedSize(mm).y;
+  if (STACKMODE){
+    var rowpos={};
+    for (var cycles=0;cycles<2;cycles++){
+      var currentrow=0;
+      var renderingindex=[0];
+      var mm=calculatedMountain;
+      for (var i=0;i<calculatedMountain.dim-1;i++){
+        renderingindex.unshift(mm.arr.length-1);
+        mm=mm.arr[mm.arr.length-1];
       }
-      for (var d=2;d<calculatedMountain.dim;d++){
-        var mm=findByIndex(calculatedMountain,renderingindex.slice(d+1,-1).reverse());
-        lasts[d]=bounds[d][renderingindex.slice(d).join(",")];
+      renderingindex.unshift(0);
+      while (true){
+        var mm=findByIndex(calculatedMountain,renderingindex.slice(1,-1).reverse());
         if (cycles){
-          var lines=Math.floor(d/2);
-          if (d%2){
-            ctx.beginPath();
-            for (var i=0;i<lines;i++){
-              ctx.moveTo(bounds[d][renderingindex.slice(d).join(",")].l,bounds[d][renderingindex.slice(d).join(",")].b+ROWHEIGHT*(i+1)/(lines+1));
-              ctx.lineTo(bounds[d][renderingindex.slice(d).join(",")].r,bounds[d][renderingindex.slice(d).join(",")].b+ROWHEIGHT*(i+1)/(lines+1));
-            }
-            ctx.stroke();
+          render1Dmountain(calculatedMountain,mm,rowpos);
+        }else{
+          rowpos[renderingindex.slice(1).join(",")]=currentrow;
+        }
+        currentrow++;
+        for (var d=1;d<calculatedMountain.dim;d++){
+          renderingindex[d]--;
+          if (renderingindex[d]<0){
           }else{
-            ctx.beginPath();
-            for (var i=0;i<lines;i++){
-              ctx.moveTo(bounds[d][renderingindex.slice(d).join(",")].r+COLUMNWIDTH*(i+1)/(lines+1),bounds[d][renderingindex.slice(d).join(",")].t);
-              ctx.lineTo(bounds[d][renderingindex.slice(d).join(",")].r+COLUMNWIDTH*(i+1)/(lines+1),bounds[d][renderingindex.slice(d).join(",")].b);
+            for (var dd=d-1;dd>=1;dd--){
+              var mm=findByIndex(calculatedMountain,renderingindex.slice(dd+1,-1).reverse());
+              renderingindex[dd]=mm.arr.length-1;
             }
-            ctx.stroke();
+            if (d>1) currentrow++;
+            if (cycles&&d>1){
+              var lines=d-1;
+              ctx.beginPath();
+              for (var i=0;i<lines;i++){
+                var y=currentrow*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3+ROWHEIGHT*(i+1)/(lines+1);
+                ctx.moveTo(0,y);
+                ctx.lineTo(canvas.width,y);
+              }
+              ctx.stroke();
+            }
+            break;
           }
         }
-        renderingindex[d]++;
-        if (renderingindex[d]>=mm.arr.length){
+        if (d>=calculatedMountain.dim){
           if (!cycles){
-            bounds[d+1][renderingindex.slice(d+1).join(",")]={l:0,t:0};
-            for (var dd=(d+1)%2?d+2:d+1;dd<calculatedMountain.dim;dd+=2){
-              if (lasts[dd]){
-                bounds[d+1][renderingindex.slice(d+1).join(",")].l=lasts[dd].r+ +COLUMNWIDTH;
-                break;
-              }
-            }
-            for (var dd=(d+1)%2?d+1:d+2;dd<calculatedMountain.dim;dd+=2){
-              if (lasts[dd]){
-                bounds[d+1][renderingindex.slice(d+1).join(",")].t=lasts[dd].b+ +ROWHEIGHT;
-                break;
-              }
-            }
-            bounds[d+1][renderingindex.slice(d+1).join(",")].r=0;
-            for (var i=0;i<mm.arr.length;i++){
-              bounds[d+1][renderingindex.slice(d+1).join(",")].r=Math.max(bounds[d+1][renderingindex.slice(d+1).join(",")].r,bounds[d][i+","+renderingindex.slice(d+1).join(",")].r+(d+1)%2*COLUMNWIDTH);
-            }
-            bounds[d+1][renderingindex.slice(d+1).join(",")].b=0;
-            for (var i=0;i<mm.arr.length;i++){
-              bounds[d+1][renderingindex.slice(d+1).join(",")].b=Math.max(bounds[d+1][renderingindex.slice(d+1).join(",")].b,bounds[d][i+","+renderingindex.slice(d+1).join(",")].b+d%2*ROWHEIGHT);
-            }
-            if (d==2){
-              for (var i=0;i<mm.arr.length;i++){
-                var offset=bounds[d+1][renderingindex.slice(d+1).join(",")].b-d%2*ROWHEIGHT-bounds[d][i+","+renderingindex.slice(d+1).join(",")].b;
-                bounds[d][i+","+renderingindex.slice(d+1).join(",")].t+=offset;
-                bounds[d][i+","+renderingindex.slice(d+1).join(",")].b+=offset;
-              }
-            }
+            //resize
+            canvas.width=findByIndex(calculatedMountain,"0".repeat(calculatedMountain.dim-1).split("")).arr.length*COLUMNWIDTH;
+            canvas.height=(rowpos["0".repeat(calculatedMountain.dim).split("")]+1)*ROWHEIGHT;
+            ctx.fillStyle="white"; //clear
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle="black";
+            ctx.strokeStyle="black";
+            ctx.lineWidth=+LINETHICKNESS;
+            ctx.font=NUMBERTHICKNESS+" "+NUMBERSIZE+"px Arial";
           }
-          renderingindex[d]=0;
-          lasts[d]=null;
-        }else{
           break;
         }
       }
-      if (d>=calculatedMountain.dim) break;
+    }
+  }else{
+    var bounds=[];
+    for (var i=0;i<=Math.max(calculatedMountain.dim,2);i++){
+      bounds.push({});
+    }
+    for (var cycles=0;cycles<2;cycles++){
+      var renderingindex=[];
+      var lasts=[];
+      for (var i=0;i<=calculatedMountain.dim;i++){
+        renderingindex.push(0);
+        lasts.push(null);
+      }
+      if (cycles){
+        //resize
+        canvas.width=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].r;
+        canvas.height=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].b;
+        ctx.fillStyle="white"; //clear
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle="black";
+        ctx.strokeStyle="black";
+        ctx.lineWidth=+LINETHICKNESS;
+        ctx.font=NUMBERTHICKNESS+" "+NUMBERSIZE+"px Arial";
+      }
+      while (true){
+        var mm=findByIndex(calculatedMountain,renderingindex.slice(2,-1).reverse());
+        if (cycles){
+          render2Dmountain(mm,bounds[2][renderingindex.slice(2).join(",")].l,bounds[2][renderingindex.slice(2).join(",")].t);
+        }else{
+          bounds[2][renderingindex.slice(2).join(",")]={l:0,t:0};
+          for (var d=2;d<calculatedMountain.dim;d+=2){
+            if (lasts[d]){
+              bounds[2][renderingindex.slice(2).join(",")].l=lasts[d].r+ +COLUMNWIDTH;
+              break;
+            }
+          }
+          for (var d=3;d<calculatedMountain.dim;d+=2){
+            if (lasts[d]){
+              bounds[2][renderingindex.slice(2).join(",")].t=lasts[d].b+ +ROWHEIGHT;
+              break;
+            }
+          }
+          bounds[2][renderingindex.slice(2).join(",")].r=bounds[2][renderingindex.slice(2).join(",")].l+get2DmountainRenderedSize(mm).x;
+          bounds[2][renderingindex.slice(2).join(",")].b=bounds[2][renderingindex.slice(2).join(",")].t+get2DmountainRenderedSize(mm).y;
+        }
+        for (var d=2;d<calculatedMountain.dim;d++){
+          var mm=findByIndex(calculatedMountain,renderingindex.slice(d+1,-1).reverse());
+          lasts[d]=bounds[d][renderingindex.slice(d).join(",")];
+          if (cycles){
+            var lines=Math.floor(d/2);
+            if (d%2){
+              ctx.beginPath();
+              for (var i=0;i<lines;i++){
+                ctx.moveTo(bounds[d][renderingindex.slice(d).join(",")].l,bounds[d][renderingindex.slice(d).join(",")].b+ROWHEIGHT*(i+1)/(lines+1));
+                ctx.lineTo(bounds[d][renderingindex.slice(d).join(",")].r,bounds[d][renderingindex.slice(d).join(",")].b+ROWHEIGHT*(i+1)/(lines+1));
+              }
+              ctx.stroke();
+            }else{
+              ctx.beginPath();
+              for (var i=0;i<lines;i++){
+                ctx.moveTo(bounds[d][renderingindex.slice(d).join(",")].r+COLUMNWIDTH*(i+1)/(lines+1),bounds[d][renderingindex.slice(d).join(",")].t);
+                ctx.lineTo(bounds[d][renderingindex.slice(d).join(",")].r+COLUMNWIDTH*(i+1)/(lines+1),bounds[d][renderingindex.slice(d).join(",")].b);
+              }
+              ctx.stroke();
+            }
+          }
+          renderingindex[d]++;
+          if (renderingindex[d]>=mm.arr.length){
+            if (!cycles){
+              bounds[d+1][renderingindex.slice(d+1).join(",")]={l:0,t:0};
+              for (var dd=(d+1)%2?d+2:d+1;dd<calculatedMountain.dim;dd+=2){
+                if (lasts[dd]){
+                  bounds[d+1][renderingindex.slice(d+1).join(",")].l=lasts[dd].r+ +COLUMNWIDTH;
+                  break;
+                }
+              }
+              for (var dd=(d+1)%2?d+1:d+2;dd<calculatedMountain.dim;dd+=2){
+                if (lasts[dd]){
+                  bounds[d+1][renderingindex.slice(d+1).join(",")].t=lasts[dd].b+ +ROWHEIGHT;
+                  break;
+                }
+              }
+              bounds[d+1][renderingindex.slice(d+1).join(",")].r=0;
+              for (var i=0;i<mm.arr.length;i++){
+                bounds[d+1][renderingindex.slice(d+1).join(",")].r=Math.max(bounds[d+1][renderingindex.slice(d+1).join(",")].r,bounds[d][i+","+renderingindex.slice(d+1).join(",")].r+(d+1)%2*COLUMNWIDTH);
+              }
+              bounds[d+1][renderingindex.slice(d+1).join(",")].b=0;
+              for (var i=0;i<mm.arr.length;i++){
+                bounds[d+1][renderingindex.slice(d+1).join(",")].b=Math.max(bounds[d+1][renderingindex.slice(d+1).join(",")].b,bounds[d][i+","+renderingindex.slice(d+1).join(",")].b+d%2*ROWHEIGHT);
+              }
+              if (d==2){
+                for (var i=0;i<mm.arr.length;i++){
+                  var offset=bounds[d+1][renderingindex.slice(d+1).join(",")].b-d%2*ROWHEIGHT-bounds[d][i+","+renderingindex.slice(d+1).join(",")].b;
+                  bounds[d][i+","+renderingindex.slice(d+1).join(",")].t+=offset;
+                  bounds[d][i+","+renderingindex.slice(d+1).join(",")].b+=offset;
+                }
+              }
+            }
+            renderingindex[d]=0;
+            lasts[d]=null;
+          }else{
+            break;
+          }
+        }
+        if (d>=calculatedMountain.dim) break;
+      }
     }
   }
   //enable save
@@ -589,6 +649,27 @@ function render2Dmountain(m,x,y){
         ctx.lineTo(x+COLUMNWIDTH*((row.arr[point.parentIndex].position-leastPosition)*2-j+1)/2,y+ROWHEIGHT*(m.arr.length-j)-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
         ctx.stroke();
       }
+    }
+  }
+}
+function render1Dmountain(m,mm,rowpos){
+  while (mm.dim<1){
+    mm={
+      dim:mm.dim+1,
+      arr:[mm]
+    };
+  }
+  var rowid=rowpos[indexFromCoord(m,mm.coord,1).reverse().join(",")+",0"];
+  for (var k=0;k<mm.arr.length;k++){
+    var point=mm.arr[k];
+    ctx.fillText(point.strexp||point.value,COLUMNWIDTH*(point.position*2+1)/2-ctx.measureText(point.strexp||point.value).width/2,(rowid+1)*ROWHEIGHT-3);
+    if (point.leftLegCoord){
+      ctx.beginPath();
+      ctx.moveTo(COLUMNWIDTH*(point.position*2+1)/2,(rowpos[indexFromCoord(m,point.rightLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.lineTo(COLUMNWIDTH*(point.position*2+1)/2,(rowid+1)*ROWHEIGHT);
+      ctx.lineTo(COLUMNWIDTH*(findByCoord(m,point.leftLegCoord).position*2+1)/2,(rowid+2)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.lineTo(COLUMNWIDTH*(findByCoord(m,point.leftLegCoord).position*2+1)/2,(rowpos[indexFromCoord(m,point.leftLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.stroke();
     }
   }
 }
