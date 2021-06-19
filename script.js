@@ -172,11 +172,7 @@ function calcMountain(s,maxDim=Infinity){
     var dimensions=1;
     while (dimensions<=maxDim){
       var uppers=calcDifference(m);
-      if (IDKWHATTOCALLTHIS){
-        if (uppers.arr.length<1) break;
-      }else{
-        if (uppers.arr.length<1||sumArray(uppers.arr[uppers.arr.length-1].coord)!=lastPosition||!uppers.arr[uppers.arr.length-1].value) break;
-      }
+      if (uppers.arr.length<1) break;
       var upperm=calcMountain(uppers,dimensions);
       var upperdim=upperm.dim;
       var raisedupperm=upperm;
@@ -191,7 +187,6 @@ function calcMountain(s,maxDim=Infinity){
       raisedupperm.arr.unshift(m);
       m=raisedupperm;
       dimensions++;
-      if (!IDKWHATTOCALLTHIS&&!(uppers.arr[uppers.arr.length-1].value>1)) break;
     }
     return m;
   }
@@ -210,19 +205,9 @@ function calcDifference(m){
       rightLegPositions.push(sumArray(m.arr[i].coord));
     }
   }else{
-    if (IDKWHATTOCALLTHIS2){
-      for (var i=0;i<=getLastPosition(m);i++){
-        var node=findHighestWithPosition(m,i);
-        if (node) rightLegPositions.push(i);
-      }
-    }else{
-      var pn=findHighestWithPosition(m,getLastPosition(m));
-      while (pn){
-        rightLegPositions.unshift(sumArray(pn.coord));
-        var ppn=parent(m,pn);
-        if (!ppn) ppn=leftLeg(m,pn);
-        pn=ppn;
-      }
+    for (var i=0;i<=getLastPosition(m);i++){
+      var node=findHighestWithPosition(m,i);
+      if (node) rightLegPositions.push(i);
     }
     for (var i=0;i<rightLegPositions.length;i++){
       var node=findHighestWithPosition(m,rightLegPositions[i]);
@@ -380,8 +365,8 @@ function updateMountainString(){
     findByCoord(calculatedMountain,[j]).strexp=getstrexp(nums[j]);
   }
 }
-var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2","STACKMODE"];
-var optionsWhichAffectMountain=["input","MAXDIMENSIONS","IDKWHATTOCALLTHIS","IDKWHATTOCALLTHIS2"];
+var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","STACKMODE","HIGHLIGHT"];
+var optionsWhichAffectMountain=["input","MAXDIMENSIONS"];
 var input="";
 var inputc="";
 var ROWHEIGHT=32;
@@ -391,9 +376,8 @@ var NUMBERSIZE=10;
 var NUMBERTHICKNESS=400;
 var LINEPLACE=1;
 var MAXDIMENSIONS=10;
-var IDKWHATTOCALLTHIS=true;
-var IDKWHATTOCALLTHIS2=true;
-var STACKMODE=false;
+var STACKMODE=true;
+var HIGHLIGHT=true;
 var inputFocused=false;
 var timesDrawn=0;
 var finalDrawn=0;
@@ -413,13 +397,22 @@ function draw(recalculate){
   }
   var curpos=form.input.selectionStart;
   var curendpos=form.input.selectionEnd;
+  var highlightindex;
+  var highlightendindex;
   var newinputc;
   if (!inputFocused){
+    highlightindex=-1;
+    highlightendindex=-1;
     newinputc = input;
-  }else if (curpos==curendpos){
-    newinputc = input.substring(0,curpos)+cursorstr+input.substring(curpos);
   }else{
-    newinputc = input.substring(0,curpos)+cursorstr+input.substring(curpos,curendpos)+cursorendstr+input.substring(curendpos);
+    highlightindex=(input.substring(0,curpos).match(/,/g)||[]).length;
+    highlightendindex=(input.substring(0,curendpos).match(/,/g)||[]).length;
+    console.log([highlightindex,highlightendindex]);
+    if (curpos==curendpos){
+      newinputc = input.substring(0,curpos)+cursorstr+input.substring(curpos);
+    }else{
+      newinputc = input.substring(0,curpos)+cursorstr+input.substring(curpos,curendpos)+cursorendstr+input.substring(curendpos);
+    }
   }
   if (!optionChanged&&inputc==newinputc) return;
   inputc=newinputc;
@@ -473,6 +466,10 @@ function draw(recalculate){
             canvas.height=(rowpos["0".repeat(calculatedMountain.dim).split("")]+1)*ROWHEIGHT;
             ctx.fillStyle="white"; //clear
             ctx.fillRect(0,0,canvas.width,canvas.height);
+            if (highlightindex!=-1){
+              ctx.fillStyle="#ffaaaa";
+              ctx.fillRect(highlightindex*COLUMNWIDTH,0,(highlightendindex-highlightindex+1)*COLUMNWIDTH,canvas.height);
+            }
             ctx.fillStyle="black";
             ctx.strokeStyle="black";
             ctx.lineWidth=+LINETHICKNESS;

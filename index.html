@@ -46,6 +46,10 @@
       right:0;
       position:absolute;
     }
+    .optionwrap {
+      margin:0 30px 0 0;
+      display: inline-block;
+    }
   </style>
   <script src="./script.js"></script>
 </head>
@@ -63,19 +67,22 @@
     </div>
     <button id="showinput" type="button" style="position:fixed;right:0;padding:4px;display:none" onclick="dg('inputcontainer').style.display='block';dg('showinput').style.display='none';">Show</button>
     <div style="width:calc(100% - 500px)">
-      <input id="ROWHEIGHT" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()">
-      <input id="COLUMNWIDTH" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()">
-      <input id="LINETHICKNESS" style="width:100px" type="range" min=1 max=15 value=1 oninput="requestDraw()">
-      <input id="NUMBERSIZE" style="width:120px" type="range" min=4 max=96 value=10 oninput="requestDraw()">
-      <input id="NUMBERTHICKNESS" style="width:80px" type="range" min=100 max=900 value=400 step=100 oninput="requestDraw()">
-      <input id="LINEPLACE" style="width:120px" type="range" min=0 max=2 value=1 step=0.01 oninput="requestDraw()">
-      <input id="MAXDIMENSIONS" type="number" min=0 value=10 step=1 oninput="requestDraw(true)">
-      <input id="IDKWHATTOCALLTHIS" type="checkbox" checked oninput="requestDraw(true)">
-      <input id="IDKWHATTOCALLTHIS2" type="checkbox" checked oninput="requestDraw(true)">
-      <input id="STACKMODE" type="checkbox" oninput="requestDraw()">
-      <input type="button" value="Draw" onclick="requestDraw(true)">
-      <input type="button" value="Save (Simple)" onclick="saveSimple(true)">
-      <input type="button" value="Save (Detailed)" onclick="saveDetailed(true)">
+      <div>
+        <span class="optionwrap">ROWHEIGHT <input id="ROWHEIGHT" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()"></span>
+        <span class="optionwrap">COLUMNWIDTH <input id="COLUMNWIDTH" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()"></span>
+        <span class="optionwrap">LINETHICKNESS <input id="LINETHICKNESS" style="width:100px" type="range" min=1 max=15 value=1 oninput="requestDraw()"></span>
+        <span class="optionwrap">NUMBERSIZE <input id="NUMBERSIZE" style="width:120px" type="range" min=4 max=96 value=10 oninput="requestDraw()"></span>
+        <span class="optionwrap">NUMBERTHICKNESS <input id="NUMBERTHICKNESS" style="width:80px" type="range" min=100 max=900 value=400 step=100 oninput="requestDraw()"></span>
+        <span class="optionwrap">LINEPLACE <input id="LINEPLACE" style="width:120px" type="range" min=0 max=2 value=1 step=0.01 oninput="requestDraw()"></span>
+        <span class="optionwrap">MAXDIMENSIONS <input id="MAXDIMENSIONS" type="number" min=0 value=10 step=1 oninput="requestDraw(true)"></span>
+        <span class="optionwrap">STACKMODE <input id="STACKMODE" type="checkbox" checked oninput="requestDraw()"></span>
+        <span class="optionwrap">HIGHLIGHT <input id="HIGHLIGHT" type="checkbox" checked oninput="requestDraw()"></span>
+      </div>
+      <span>
+        <input type="button" value="Draw" onclick="requestDraw(true)">
+        <input type="button" value="Save (Simple)" onclick="saveSimple(true)">
+        <input type="button" value="Save (Detailed)" onclick="saveDetailed(true)">
+      </span>
       <div id="drawStatus" style="display:none;position:fixed;top:0;right:0;"></div>
       <input type="text" id="copyarea" style="display:none">
     </div>
@@ -83,6 +90,6 @@
   <canvas id="output" width=640 height=960 style="display:none"></canvas>
   <img id='outimg' style='border-style:none;border-width:1px'>
   <div>ω-Y sequence by Yukito</div>
-  <div>Version alpha.2</div>
+  <div>Version alpha.2.1</div>
 </body>
 </html>
