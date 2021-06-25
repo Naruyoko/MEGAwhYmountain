@@ -222,11 +222,12 @@ function calcDifference(m){
           break;
         }
         pn=ppn;
-        if (pn.parentIndex==-1&&rightLegPositions.indexOf(sumArray(pn.coord))!=-1){
+        if (pn.parentIndex==-1&&(pn.coord[m.dim-1]||0)<(node.coord[m.dim-1]||0)&&rightLegPositions.indexOf(sumArray(pn.coord))!=-1){
           rightLegTree.push(rightLegPositions.indexOf(sumArray(pn.coord)));
           break;
         }
       }
+      if (!pn) rightLegTree.push(-1);
     }
   }
   var rightLegInR=[];
@@ -466,7 +467,7 @@ function draw(recalculate){
             canvas.height=(rowpos["0".repeat(calculatedMountain.dim).split("")]+1)*ROWHEIGHT;
             ctx.fillStyle="white"; //clear
             ctx.fillRect(0,0,canvas.width,canvas.height);
-            if (highlightindex!=-1){
+            if (HIGHLIGHT&&highlightindex!=-1){
               ctx.fillStyle="#ffaaaa";
               ctx.fillRect(highlightindex*COLUMNWIDTH,0,(highlightendindex-highlightindex+1)*COLUMNWIDTH,canvas.height);
             }
