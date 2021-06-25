@@ -73,14 +73,14 @@ function parseSequenceElement(s,i){
 }
 function equalVector(s,t,d){
   if (d===undefined) d=0;
-  for (var i=d;i<Math.max(s.length,t.length);i++){
+  for (var i=d,l=Math.max(s.length,t.length);i<l;i++){
     if ((s[i]||0)!=(t[i]||0)) return false;
   }
   return true;
 }
 function addVector(s,t){
   var r=[];
-  for (var i=0;i<Math.max(s.length,t.length);i++){
+  for (var i=0,l=Math.max(s.length,t.length);i<l;i++){
     r.push((s[i]||0)+(t[i]||0));
   }
   return r;
@@ -194,13 +194,11 @@ function calcMountain(s,maxDim=Infinity){
 function calcDifference(m){
   var coordOffset=incrementCoord(m.coord,m.dim);
   var rightLegs=[];
-  var rightLegCoords=[];
   var rightLegTree=[];
   var rightLegPositions=[];
   if (m.dim==1){
     for (var i=0;i<m.arr.length;i++){
       rightLegs.push(m.arr[i]);
-      rightLegCoords.push(m.arr[i].coord);
       rightLegTree.push(m.arr[i].parentIndex);
       rightLegPositions.push(sumArray(m.arr[i].coord));
     }
@@ -212,7 +210,6 @@ function calcDifference(m){
     for (var i=0;i<rightLegPositions.length;i++){
       var node=findHighestWithPosition(m,rightLegPositions[i]);
       rightLegs.push(node);
-      rightLegCoords.push(node.coord);
       var pn=node;
       while (pn){
         var ppn=parent(m,pn);
@@ -222,7 +219,7 @@ function calcDifference(m){
           break;
         }
         pn=ppn;
-        if (pn.parentIndex==-1&&(pn.coord[m.dim-1]||0)<(node.coord[m.dim-1]||0)&&rightLegPositions.indexOf(sumArray(pn.coord))!=-1){
+        if (pn.parentIndex==-1&&rightLegPositions.indexOf(sumArray(pn.coord))!=-1){
           rightLegTree.push(rightLegPositions.indexOf(sumArray(pn.coord)));
           break;
         }
@@ -240,7 +237,7 @@ function calcDifference(m){
   };
   for (var i=0;i<rightLegs.length;i++){
     var pi=i;
-    while (pi>-1&&!(rightLegs[pi].value<rightLegs[i].value)) pi=rightLegTree[pi];
+    while (pi>-1&&!(rightLegs[pi].value<rightLegs[i].value&&(rightLegs[pi].coord[m.dim-1]||0)<(rightLegs[i].coord[m.dim-1]||0))) pi=rightLegTree[pi];
     rightLegParents.push(pi);
     if (pi!=-1){
       rightLegInR.push(r.arr.length);
@@ -252,8 +249,8 @@ function calcDifference(m){
         coord:addCoord(coordOffset,0,rightLegPositions[i]-sumArray(coordOffset)),
         parentIndex:-1,
         forcedParent:true,
-        leftLegCoord:rightLegCoords[pi].slice(0),
-        rightLegCoord:rightLegCoords[i].slice(0)
+        leftLegCoord:rightLegs[pi].coord.slice(0),
+        rightLegCoord:rightLegs[i].coord.slice(0)
       });
     }else{
       rightLegInR.push(-1);
@@ -308,11 +305,36 @@ function findHighestWithPosition(m,position){
     if (m.position==position) return m;
     else null;
   }else{
-    for (var i=m.arr.length-1;i>=0;i--){
+    /*for (var i=m.arr.length-1;i>=0;i--){
       var r=findHighestWithPosition(m.arr[i],position);
       if (r) return r;
     }
-    return null;
+    return null;*/
+    //Performance: should be equivalent for a well-formed mountain
+    if (m.arr.length===0) return null;
+    if (m.dim==1){
+      var min=0;
+      var max=m.arr.length-1;
+      if (m.arr[min].position>position||m.arr[max].position<position) return null;
+      if (m.arr[min].position==position) return m.arr[min];
+      if (m.arr[max].position==position) return m.arr[max];
+      while (min!=max){
+        var mid=Math.floor((min+max)/2);
+        if (m.arr[mid].position==position) return m.arr[mid];
+        else if (min==mid) return null;
+        else if (m.arr[mid].position<position) min=mid;
+        else if (m.arr[mid].position>position) max=mid;
+      }
+      return null;
+    }else{
+      for (var i=m.arr.length-1;i>=0;i--){
+        var lowestRow=findByCoord(m.arr[i],m.arr[i].coord,1);
+        if (!lowestRow) continue;
+        var nodeInLowestRow=findHighestWithPosition(lowestRow,position);
+        if (nodeInLowestRow) return findHighestWithPosition(m.arr[i],position);
+      }
+      return null;
+    }
   }
 }
 function parent(m,node){
@@ -408,7 +430,7 @@ function draw(recalculate){
   }else{
     highlightindex=(input.substring(0,curpos).match(/,/g)||[]).length;
     highlightendindex=(input.substring(0,curendpos).match(/,/g)||[]).length;
-    console.log([highlightindex,highlightendindex]);
+    //console.log([highlightindex,highlightendindex]);
     if (curpos==curendpos){
       newinputc = input.substring(0,curpos)+cursorstr+input.substring(curpos);
     }else{
