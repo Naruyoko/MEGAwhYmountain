@@ -331,7 +331,10 @@ function findHighestWithPosition(m,position){
         var lowestRow=findByCoord(m.arr[i],m.arr[i].coord,1);
         if (!lowestRow) continue;
         var nodeInLowestRow=findHighestWithPosition(lowestRow,position);
-        if (nodeInLowestRow) return findHighestWithPosition(m.arr[i],position);
+        if (nodeInLowestRow){
+          if (m.dim==2) return nodeInLowestRow; //Since m.arr[i].dim==1, it is guaranteed to be the highest
+          else return findHighestWithPosition(m.arr[i],position);
+        }
       }
       return null;
     }
