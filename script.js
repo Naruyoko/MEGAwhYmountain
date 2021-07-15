@@ -276,15 +276,32 @@ function indexFromCoord(m,coord,d){
   while (true){
     if (m.dim<=d){
       if (equalVector(m.coord,coord,d)) return r;
-      else null;
+      else return null;
     }
-    for (var i=0;i<m.arr.length;i++){
+    /*for (var i=0;i<m.arr.length+1;i++){
+      if (i==m.arr.length) return null;
       if (equalVector(m.arr[i].coord,coord,m.arr[i].dim)){
         r.push(i);
         m=m.arr[i];
         break;
       }
-      if (i==m.arr.length-1) return null;
+    }*/
+    //Performance: should be equivalent for a well-formed mountain
+    if (m.dim==1){
+      for (var i=0;i<m.arr.length+1;i++){
+        if (i==m.arr.length) return null;
+        //if (equalVector(m.arr[i].coord,coord)){
+        if (m.arr[i].coord[0]==coord[0]){
+          r.push(i);
+          m=m.arr[i];
+          break;
+        }
+      }
+    }else{
+      var i=coord[m.dim-1]||0;
+      if (i>=m.arr.length) return null;
+      r.push(i);
+      m=m.arr[i];
     }
   }
 }
@@ -328,7 +345,8 @@ function findHighestWithPosition(m,position){
       return null;
     }else{
       for (var i=m.arr.length-1;i>=0;i--){
-        var lowestRow=findByCoord(m.arr[i],m.arr[i].coord,1);
+        var lowestRow=m.arr[i];
+        while (lowestRow&&lowestRow.dim>1) lowestRow=lowestRow.arr[0];
         if (!lowestRow) continue;
         var nodeInLowestRow=findHighestWithPosition(lowestRow,position);
         if (nodeInLowestRow){
@@ -391,7 +409,7 @@ function updateMountainString(){
     findByCoord(calculatedMountain,[j]).strexp=getstrexp(nums[j]);
   }
 }
-var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","STACKMODE","HIGHLIGHT"];
+var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","STACKMODE","HIGHLIGHT","DYNAMICWIDTH"];
 var optionsWhichAffectMountain=["input","MAXDIMENSIONS"];
 var input="";
 var inputc="";
@@ -404,6 +422,7 @@ var LINEPLACE=1;
 var MAXDIMENSIONS=10;
 var STACKMODE=true;
 var HIGHLIGHT=true;
+var DYNAMICWIDTH=false;
 var inputFocused=false;
 var timesDrawn=0;
 var finalDrawn=0;
@@ -445,6 +464,7 @@ function draw(recalculate){
   if (recalculate&&inputChanged) calculatedMountain=calcMountain(inputc,+MAXDIMENSIONS);
   else updateMountainString();
   if (STACKMODE){
+    var colpos=[];
     var rowpos={};
     for (var cycles=0;cycles<2;cycles++){
       var currentrow=0;
@@ -458,7 +478,7 @@ function draw(recalculate){
       while (true){
         var mm=findByIndex(calculatedMountain,renderingindex.slice(1,-1).reverse());
         if (cycles){
-          render1Dmountain(calculatedMountain,mm,rowpos);
+          render1Dmountain(calculatedMountain,mm,rowpos,colpos);
         }else{
           rowpos[renderingindex.slice(1).join(",")]=currentrow;
         }
@@ -488,13 +508,22 @@ function draw(recalculate){
         if (d>=calculatedMountain.dim){
           if (!cycles){
             //resize
-            canvas.width=findByIndex(calculatedMountain,"0".repeat(calculatedMountain.dim-1).split("")).arr.length*COLUMNWIDTH;
-            canvas.height=(rowpos["0".repeat(calculatedMountain.dim).split("")]+1)*ROWHEIGHT;
+            var bottomrow=calculatedMountain;
+            while (bottomrow.dim>1) bottomrow=bottomrow.arr[0];
+            ctx.font=NUMBERTHICKNESS+" "+NUMBERSIZE+"px Arial";
+            var totalwidth=0;
+            for (var i=0;i<bottomrow.arr.length;i++){
+              var width=DYNAMICWIDTH?ctx.measureText(bottomrow.arr[i].value).width+ +COLUMNWIDTH-15:+COLUMNWIDTH;
+              colpos.push([width,totalwidth]);
+              totalwidth+=width;
+            }
+            canvas.width=totalwidth;
+            canvas.height=(rowpos[",0".repeat(calculatedMountain.dim).substring(1)]+1)*ROWHEIGHT;
             ctx.fillStyle="white"; //clear
             ctx.fillRect(0,0,canvas.width,canvas.height);
             if (HIGHLIGHT&&highlightindex!=-1){
               ctx.fillStyle="#ffaaaa";
-              ctx.fillRect(highlightindex*COLUMNWIDTH,0,(highlightendindex-highlightindex+1)*COLUMNWIDTH,canvas.height);
+              ctx.fillRect(colpos[highlightindex][1],0,colpos[highlightendindex][0]+colpos[highlightendindex][1]-colpos[highlightindex][1],canvas.height);
             }
             ctx.fillStyle="black";
             ctx.strokeStyle="black";
@@ -675,7 +704,7 @@ function render2Dmountain(m,x,y){
     }
   }
 }
-function render1Dmountain(m,mm,rowpos){
+function render1Dmountain(m,mm,rowpos,colpos){
   while (mm.dim<1){
     mm={
       dim:mm.dim+1,
@@ -685,13 +714,14 @@ function render1Dmountain(m,mm,rowpos){
   var rowid=rowpos[indexFromCoord(m,mm.coord,1).reverse().join(",")+",0"];
   for (var k=0;k<mm.arr.length;k++){
     var point=mm.arr[k];
-    ctx.fillText(point.strexp||point.value,COLUMNWIDTH*(point.position*2+1)/2-ctx.measureText(point.strexp||point.value).width/2,(rowid+1)*ROWHEIGHT-3);
+    ctx.fillText(point.strexp||point.value,colpos[point.position][1]+colpos[point.position][0]/2-ctx.measureText(point.strexp||point.value).width/2,(rowid+1)*ROWHEIGHT-3);
     if (point.leftLegCoord){
       ctx.beginPath();
-      ctx.moveTo(COLUMNWIDTH*(point.position*2+1)/2,(rowpos[indexFromCoord(m,point.rightLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
-      ctx.lineTo(COLUMNWIDTH*(point.position*2+1)/2,(rowid+1)*ROWHEIGHT);
-      ctx.lineTo(COLUMNWIDTH*(findByCoord(m,point.leftLegCoord).position*2+1)/2,(rowid+2)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
-      ctx.lineTo(COLUMNWIDTH*(findByCoord(m,point.leftLegCoord).position*2+1)/2,(rowpos[indexFromCoord(m,point.leftLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.moveTo(colpos[point.position][1]+colpos[point.position][0]/2,(rowpos[indexFromCoord(m,point.rightLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.lineTo(colpos[point.position][1]+colpos[point.position][0]/2,(rowid+1)*ROWHEIGHT);
+      var parentPosition=findByCoord(m,point.leftLegCoord).position;
+      ctx.lineTo(colpos[parentPosition][1]+colpos[parentPosition][0]/2,(rowid+2)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.lineTo(colpos[parentPosition][1]+colpos[parentPosition][0]/2,(rowpos[indexFromCoord(m,point.leftLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
       ctx.stroke();
     }
   }
