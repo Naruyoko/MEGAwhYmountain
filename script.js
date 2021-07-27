@@ -480,7 +480,7 @@ function draw(recalculate){
         if (cycles){
           render1Dmountain(calculatedMountain,mm,rowpos,colpos);
         }else{
-          rowpos[renderingindex.slice(1).join(",")]=currentrow;
+          rowpos["c"+mm.coord.slice(1).join(",")]=currentrow;
         }
         currentrow++;
         for (var d=1;d<calculatedMountain.dim;d++){
@@ -518,7 +518,7 @@ function draw(recalculate){
               totalwidth+=width;
             }
             canvas.width=totalwidth;
-            canvas.height=(rowpos[",0".repeat(calculatedMountain.dim).substring(1)]+1)*ROWHEIGHT;
+            canvas.height=(rowpos["c"]+1)*ROWHEIGHT;
             ctx.fillStyle="white"; //clear
             ctx.fillRect(0,0,canvas.width,canvas.height);
             if (HIGHLIGHT&&highlightindex!=-1){
@@ -711,17 +711,17 @@ function render1Dmountain(m,mm,rowpos,colpos){
       arr:[mm]
     };
   }
-  var rowid=rowpos[indexFromCoord(m,mm.coord,1).reverse().join(",")+",0"];
+  var rowid=rowpos["c"+mm.coord.slice(1).join(",")];
   for (var k=0;k<mm.arr.length;k++){
     var point=mm.arr[k];
     ctx.fillText(point.strexp||point.value,colpos[point.position][1]+colpos[point.position][0]/2-ctx.measureText(point.strexp||point.value).width/2,(rowid+1)*ROWHEIGHT-3);
     if (point.leftLegCoord){
       ctx.beginPath();
-      ctx.moveTo(colpos[point.position][1]+colpos[point.position][0]/2,(rowpos[indexFromCoord(m,point.rightLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.moveTo(colpos[point.position][1]+colpos[point.position][0]/2,(rowpos["c"+point.rightLegCoord.slice(1).join(",")]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
       ctx.lineTo(colpos[point.position][1]+colpos[point.position][0]/2,(rowid+1)*ROWHEIGHT);
       var parentPosition=findByCoord(m,point.leftLegCoord).position;
       ctx.lineTo(colpos[parentPosition][1]+colpos[parentPosition][0]/2,(rowid+2)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
-      ctx.lineTo(colpos[parentPosition][1]+colpos[parentPosition][0]/2,(rowpos[indexFromCoord(m,point.leftLegCoord,1).reverse().join(",")+",0"]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
+      ctx.lineTo(colpos[parentPosition][1]+colpos[parentPosition][0]/2,(rowpos["c"+point.leftLegCoord.slice(1).join(",")]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
       ctx.stroke();
     }
   }
