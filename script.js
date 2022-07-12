@@ -409,7 +409,7 @@ function updateMountainString(){
     findByCoord(calculatedMountain,[j]).strexp=getstrexp(nums[j]);
   }
 }
-var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","STACKMODE","HIGHLIGHT","DYNAMICWIDTH"];
+var options=["input","ROWHEIGHT","COLUMNWIDTH","LINETHICKNESS","NUMBERSIZE","NUMBERTHICKNESS","LINEPLACE","MAXDIMENSIONS","STACKMODE","HIGHLIGHT","DYNAMICWIDTH","EXTRADIVIDER"];
 var optionsWhichAffectMountain=["input","MAXDIMENSIONS"];
 var input="";
 var inputc="";
@@ -423,6 +423,7 @@ var MAXDIMENSIONS=10;
 var STACKMODE=true;
 var HIGHLIGHT=true;
 var DYNAMICWIDTH=false;
+var EXTRADIVIDER=false;
 var inputFocused=false;
 var timesDrawn=0;
 var finalDrawn=0;
@@ -491,9 +492,9 @@ function draw(recalculate){
               var mm=findByIndex(calculatedMountain,renderingindex.slice(dd+1,-1).reverse());
               renderingindex[dd]=mm.arr.length-1;
             }
-            if (d>1) currentrow++;
-            if (cycles&&d>1){
-              var lines=d-1;
+            if (EXTRADIVIDER||d>1) currentrow++;
+            if (cycles&&(EXTRADIVIDER||d>1)){
+              var lines=EXTRADIVIDER?d:d-1;
               ctx.beginPath();
               for (var i=0;i<lines;i++){
                 var y=currentrow*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3+ROWHEIGHT*(i+1)/(lines+1);
