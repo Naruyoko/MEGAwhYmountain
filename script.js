@@ -291,7 +291,7 @@ function indexFromCoord(m,coord,d){
       for (var i=0;i<m.arr.length+1;i++){
         if (i==m.arr.length) return null;
         //if (equalVector(m.arr[i].coord,coord)){
-        if (m.arr[i].coord[0]==coord[0]){
+        if ((m.arr[i].coord[0]||0)==(coord[0]||0)){
           r.push(i);
           m=m.arr[i];
           break;
