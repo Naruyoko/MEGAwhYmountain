@@ -1,5 +1,6 @@
 var canvas;
 var ctx;
+var outimg;
 var cursorstr="▮";
 var cursorendstr="▯";
 var lineBreakRegex=/\r?\n/g;
@@ -8,34 +9,36 @@ window.onload=function (){
   console.clear();
   canvas=dg("output");
   ctx=canvas.getContext("2d");
+  outimg=dg("outimg");
   dg('input').onkeydown=handlekey;
   dg('input').onfocus=handlekey;
   dg('input').onmousedown=handlekey;
   load();
   requestDraw(true);
   drawIntervalLoopFunc();
-  setInterval(function(){if(hasRequestedDraw&&Date.now()-lastDrawByRequest>=1000)requestAnimationFrame(_processDrawRequest);},100);
+  setInterval(function(){if(hasRequestedDraw&&Date.now()-lastDrawTime>=1000)requestAnimationFrame(processDrawRequest);},100);
 }
 function drawIntervalLoopFunc(){
-  setTimeout(function(){if(document.activeElement==dg("input"))requestDraw(true);drawIntervalLoopFunc();},100);
+  if (document.activeElement==document.getElementById("input")) requestDraw();
+  setTimeout(drawIntervalLoopFunc,0);
 }
 var hasRequestedDraw=false;
 var hasRequestedRecalculation=false;
-var lastDrawByRequest=Date.now();
+var lastDrawTime=-1;
 function requestDraw(recalculate){
   hasRequestedRecalculation=hasRequestedRecalculation||recalculate;
   if (!hasRequestedDraw){
-    requestAnimationFrame(_processDrawRequest);
+    requestAnimationFrame(processDrawRequest);
     hasRequestedDraw=true;
   }
 }
-function _processDrawRequest(){
-  if (timesDrawn-doneDrawn>50) return;
-  lastDrawByRequest=Date.now();
+function processDrawRequest(){
+  if (Date.now()-lastDrawTime<10) return;
   try{
+    lastDrawTime=Date.now();
     draw(hasRequestedRecalculation);
   }catch(e){
-    requestAnimationFrame(_processDrawRequest);
+    requestAnimationFrame(processDrawRequest);
     throw e;
   }
   hasRequestedDraw=false;
@@ -426,8 +429,6 @@ var DYNAMICWIDTH=false;
 var EXTRADIVIDER=false;
 var inputFocused=false;
 var timesDrawn=0;
-var finalDrawn=0;
-var doneDrawn=0;
 function draw(recalculate){
   var inputChanged=false;
   var optionChanged=false;
@@ -518,8 +519,11 @@ function draw(recalculate){
               colpos.push([width,totalwidth]);
               totalwidth+=width;
             }
+            var totalheight=(rowpos["c"]+1)*ROWHEIGHT;
+            document.getElementById("outputcontainer").style.width=totalwidth+"px";
+            document.getElementById("outputcontainer").style.height=totalheight+"px";
             canvas.width=totalwidth;
-            canvas.height=(rowpos["c"]+1)*ROWHEIGHT;
+            canvas.height=totalheight;
             ctx.fillStyle="white"; //clear
             ctx.fillRect(0,0,canvas.width,canvas.height);
             if (HIGHLIGHT&&highlightindex!=-1){
@@ -530,6 +534,7 @@ function draw(recalculate){
             ctx.strokeStyle="black";
             ctx.lineWidth=+LINETHICKNESS;
             ctx.font=NUMBERTHICKNESS+" "+NUMBERSIZE+"px Arial";
+            ctx.textAlign="center";
           }
           break;
         }
@@ -549,14 +554,19 @@ function draw(recalculate){
       }
       if (cycles){
         //resize
-        canvas.width=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].r;
-        canvas.height=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].b;
+        var totalwidth=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].r;
+        var totalheight=bounds[Math.max(calculatedMountain.dim,2)][renderingindex.slice(Math.max(calculatedMountain.dim,2)).join(",")].b;
+        document.getElementById("outputcontainer").style.width=totalwidth+"px";
+        document.getElementById("outputcontainer").style.height=totalheight+"px";
+        canvas.width=totalwidth;
+        canvas.height=totalheight;
         ctx.fillStyle="white"; //clear
         ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle="black";
         ctx.strokeStyle="black";
         ctx.lineWidth=+LINETHICKNESS;
         ctx.font=NUMBERTHICKNESS+" "+NUMBERSIZE+"px Arial";
+        ctx.textAlign="center";
       }
       while (true){
         var mm=findByIndex(calculatedMountain,renderingindex.slice(2,-1).reverse());
@@ -642,33 +652,7 @@ function draw(recalculate){
       }
     }
   }
-  //enable save
-  if (canvas.toBlob&&Promise&&URL&&URL.createObjectURL){
-    timesDrawn++;
-    (function (timesDrawn){
-      new Promise(function (resolve,reject){
-        canvas.toBlob(
-          function callback(blob){
-            resolve(blob);
-          },
-          "image/png"
-        );
-      }).then(function (blob){
-        doneDrawn++;
-        if (blob&&timesDrawn>finalDrawn){
-          finalDrawn=timesDrawn;
-          URL.revokeObjectURL(outimg.src);
-          outimg.src=URL.createObjectURL(blob);
-        }
-        updateDrawnStatus();
-      });
-    })(timesDrawn);
-  }else{
-    outimg.width=canvas.width;
-    outimg.height=canvas.height;
-    outimg.src=canvas.toDataURL('image/png');
-  }
-  updateDrawnStatus();
+  waitAndMakeDownloadableIfInactive(++timesDrawn);
 }
 function get2DmountainRenderedSize(m){
   while (m.dim<2){
@@ -694,7 +678,7 @@ function render2Dmountain(m,x,y){
     var row=m.arr[j];
     for (var k=0;k<row.arr.length;k++){
       var point=row.arr[k];
-      ctx.fillText(point.strexp||point.value,x+COLUMNWIDTH*((point.position-leastPosition)*2-j+1)/2-ctx.measureText(point.strexp||point.value).width/2,y+ROWHEIGHT*(m.arr.length-j)-3);
+      ctx.fillText(point.strexp||point.value,x+COLUMNWIDTH*((point.position-leastPosition)*2-j+1)/2,y+ROWHEIGHT*(m.arr.length-j)-3);
       if (point.parentIndex!=-1){
         ctx.beginPath();
         ctx.moveTo(x+COLUMNWIDTH*((point.position-leastPosition)*2-j+1)/2,y+ROWHEIGHT*(m.arr.length-j)-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
@@ -715,7 +699,7 @@ function render1Dmountain(m,mm,rowpos,colpos){
   var rowid=rowpos["c"+mm.coord.slice(1).join(",")];
   for (var k=0;k<mm.arr.length;k++){
     var point=mm.arr[k];
-    ctx.fillText(point.strexp||point.value,colpos[point.position][1]+colpos[point.position][0]/2-ctx.measureText(point.strexp||point.value).width/2,(rowid+1)*ROWHEIGHT-3);
+    ctx.fillText(point.strexp||point.value,colpos[point.position][1]+colpos[point.position][0]/2,(rowid+1)*ROWHEIGHT-3);
     if (point.leftLegCoord){
       ctx.beginPath();
       ctx.moveTo(colpos[point.position][1]+colpos[point.position][0]/2,(rowpos["c"+point.rightLegCoord.slice(1).join(",")]+1)*ROWHEIGHT-NUMBERSIZE*Math.min(LINEPLACE,1)-(ROWHEIGHT-NUMBERSIZE)*Math.max(LINEPLACE-1,0)-3);
@@ -727,14 +711,53 @@ function render1Dmountain(m,mm,rowpos,colpos){
     }
   }
 }
-function updateDrawnStatus(){
-  var d=dg("drawStatus");
-  if (timesDrawn==doneDrawn){
-    d.style.display="none";
-  }else{
-    d.style.display="";
-    d.innerHTML="Rendering: "+finalDrawn+" - "+doneDrawn+"/"+timesDrawn;
-  }
+function waitAndMakeDownloadableIfInactive(timesDrawnThis){
+  swapImageToCanvas();
+  var d=document.getElementById("drawStatus");
+  d.textContent="Downloadable conversion interrupted";
+  setTimeout(function (){
+    if (timesDrawnThis!=timesDrawn) return;
+    //enable save
+    if (canvas.toBlob&&Promise&&URL&&URL.createObjectURL){
+      d.style.display="";
+      d.textContent="Making the image downloadable"
+      new Promise(function (resolve,reject){
+        canvas.toBlob(resolve,"image/png");
+      }).then(function (blob){
+        if (timesDrawnThis!=timesDrawn) return;
+        if (blob){
+          URL.revokeObjectURL(outimg.src);
+          outimg.src=URL.createObjectURL(blob);
+          swapImageToImg();
+        }
+        d.style.display="none";
+      });
+    }else{
+      d.style.display="";
+      d.textContent="Making the image downloadable";
+      setTimeout(function (){
+        outimg.width=canvas.width;
+        outimg.height=canvas.height;
+        outimg.src=canvas.toDataURL("image/png");
+        swapImageToImg();
+        d.style.display="none";
+      },0);
+    }
+  },1000);
+}
+function swapImageToCanvas(){
+  var savedScrollX=window.scrollX;
+  var savedScrollY=window.scrollY;
+  canvas.style.display="";
+  outimg.style.display="none";
+  window.scroll(savedScrollX,savedScrollY);
+}
+function swapImageToImg(){
+  var savedScrollX=window.scrollX;
+  var savedScrollY=window.scrollY;
+  canvas.style.display="none";
+  outimg.style.display="";
+  window.scroll(savedScrollX,savedScrollY);
 }
 window.onpopstate=function (e){
   load();
