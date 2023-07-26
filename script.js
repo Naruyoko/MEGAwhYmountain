@@ -16,7 +16,7 @@ window.onload=function (){
   load();
   requestDraw(true);
   drawIntervalLoopFunc();
-  setInterval(function(){if(hasRequestedDraw&&Date.now()-lastDrawTime>=1000)requestAnimationFrame(processDrawRequest);},100);
+  setInterval(function(){if(hasRequestedDraw)processDrawRequest();},0);
 }
 function drawIntervalLoopFunc(){
   if (document.activeElement==document.getElementById("input")) requestDraw();
@@ -27,10 +27,7 @@ var hasRequestedRecalculation=false;
 var lastDrawTime=-1;
 function requestDraw(recalculate){
   hasRequestedRecalculation=hasRequestedRecalculation||recalculate;
-  if (!hasRequestedDraw){
-    requestAnimationFrame(processDrawRequest);
-    hasRequestedDraw=true;
-  }
+  hasRequestedDraw=true;
 }
 function processDrawRequest(){
   if (Date.now()-lastDrawTime<10) return;
@@ -38,7 +35,6 @@ function processDrawRequest(){
     lastDrawTime=Date.now();
     draw(hasRequestedRecalculation);
   }catch(e){
-    requestAnimationFrame(processDrawRequest);
     throw e;
   }
   hasRequestedDraw=false;
