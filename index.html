@@ -46,45 +46,49 @@
       right:0;
       position:absolute;
     }
-    .optionwrap {
+    #optioncontainer>label {
       margin:0 30px 0 0;
-      display: inline-block;
+      display:inline-block;
+    }
+    .optionvalue {
+      min-width:50px;
+      display:inline-block;
     }
   </style>
   <script src="./script.js"></script>
 </head>
 <body>
   <h1>MEGA-whY mountain</h1>
-  <form name=form>
+  <form>
     <div id="inputcontainer">
       <div id="inputTab" class="inputTab">
         <input id="input" type="text" class="sequenceTextContainer" oninput="requestDraw(true)" onfocusin="inputFocused=true" onfocusout="inputFocused=false;requestDraw(true);" value="1,5,33">
         <div class="inputFooterContainer">
-          <button type="button" onclick="if(confirm('Clear sequence?')){dg('input').value='';requestDraw(true);}">Clear</button>
-          <button type="button" onclick="dg('inputcontainer').style.display='none';dg('showinput').style.display='block';">Hide</button>
+          <button type="button" onclick="if(confirm('Clear sequence?')){document.getElementById('input').value='';requestDraw(true);}">Clear</button>
+          <button type="button" onclick="document.getElementById('inputcontainer').style.display='none';document.getElementById('showinput').style.display='block';">Hide</button>
         </div>
       </div>
     </div>
-    <button id="showinput" type="button" style="position:fixed;right:0;padding:4px;display:none" onclick="dg('inputcontainer').style.display='block';dg('showinput').style.display='none';">Show</button>
-    <div style="width:calc(100% - 500px)">
-      <div>
-        <span class="optionwrap">ROWHEIGHT <input id="ROWHEIGHT" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()"></span>
-        <span class="optionwrap">COLUMNWIDTH <input id="COLUMNWIDTH" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()"></span>
-        <span class="optionwrap">LINETHICKNESS <input id="LINETHICKNESS" style="width:100px" type="range" min=1 max=15 value=1 oninput="requestDraw()"></span>
-        <span class="optionwrap">NUMBERSIZE <input id="NUMBERSIZE" style="width:120px" type="range" min=4 max=96 value=10 oninput="requestDraw()"></span>
-        <span class="optionwrap">NUMBERTHICKNESS <input id="NUMBERTHICKNESS" style="width:80px" type="range" min=100 max=900 value=400 step=100 oninput="requestDraw()"></span>
-        <span class="optionwrap">LINEPLACE <input id="LINEPLACE" style="width:120px" type="range" min=0 max=2 value=1 step=0.01 oninput="requestDraw()"></span>
-        <span class="optionwrap">MAXDIMENSIONS <input id="MAXDIMENSIONS" type="number" min=0 value=10 step=1 oninput="requestDraw(true)"></span>
-        <span class="optionwrap">STACKMODE <input id="STACKMODE" type="checkbox" checked oninput="requestDraw()"></span>
-        <span class="optionwrap">HIGHLIGHT <input id="HIGHLIGHT" type="checkbox" checked oninput="requestDraw()"></span>
-        <span class="optionwrap">DYNAMICWIDTH <input id="DYNAMICWIDTH" type="checkbox" oninput="requestDraw()"></span>
-        <span class="optionwrap">EXTRADIVIDER <input id="EXTRADIVIDER" type="checkbox" oninput="requestDraw()"></span>
+    <button id="showinput" type="button" style="position:fixed;right:0;padding:4px;display:none" onclick="document.getElementById('inputcontainer').style.display='block';document.getElementById('showinput').style.display='none';">Show</button>
+    <div id="controlscontainer" style="width:calc(100% - 500px)">
+      <div id="optioncontainer">
+        <label>ROWHEIGHT <input id="ROWHEIGHT" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()"> <span id="ROWHEIGHT_value" class="optionvalue">?</span></label>
+        <label>COLUMNWIDTH <input id="COLUMNWIDTH" style="width:150px" type="range" min=15 max=150 value=32 oninput="requestDraw()"> <span id="COLUMNWIDTH_value" class="optionvalue">?</span></label>
+        <label>LINETHICKNESS <input id="LINETHICKNESS" style="width:100px" type="range" min=1 max=15 value=1 oninput="requestDraw()"> <span id="LINETHICKNESS_value" class="optionvalue">?</span></label>
+        <label>NUMBERSIZE <input id="NUMBERSIZE" style="width:120px" type="range" min=4 max=96 value=10 oninput="requestDraw()"> <span id="NUMBERSIZE_value" class="optionvalue">?</span></label>
+        <label>NUMBERTHICKNESS <input id="NUMBERTHICKNESS" style="width:80px" type="range" min=100 max=900 value=400 step=100 oninput="requestDraw()"> <span id="NUMBERTHICKNESS_value" class="optionvalue">?</span></label>
+        <label>LINEPLACE <input id="LINEPLACE" style="width:120px" type="range" min=0 max=2 value=1 step=0.01 oninput="requestDraw()"> <span id="LINEPLACE_value" class="optionvalue">?</span></label>
+        <label>MAXDIMENSIONS <input id="MAXDIMENSIONS" type="number" min=0 value=10 step=1 oninput="requestDraw(true)"></label>
+        <label>STACKMODE <input id="STACKMODE" type="checkbox" checked oninput="requestDraw()"></label>
+        <label>HIGHLIGHT <input id="HIGHLIGHT" type="checkbox" checked oninput="requestDraw()"></label>
+        <label>DYNAMICWIDTH <input id="DYNAMICWIDTH" type="checkbox" oninput="requestDraw()"></label>
+        <label>EXTRADIVIDER <input id="EXTRADIVIDER" type="checkbox" oninput="requestDraw()"></label>
       </div>
-      <span>
+      <div>
         <input type="button" value="Draw" onclick="requestDraw(true)">
         <input type="button" value="Save (Simple)" onclick="saveSimple(true)">
         <input type="button" value="Save (Detailed)" onclick="saveDetailed(true)">
-      </span>
+      </div>
       <div id="drawStatus" style="display:none;position:fixed;top:0;right:0;"></div>
       <input type="text" id="copyarea" style="display:none">
     </div>
@@ -95,6 +99,6 @@
   </div>
   <div>ω-Y sequence by Yukito</div>
   <div>Expansion program &rarr; <a href="https://naruyoko.github.io/StudyAndExpandSequence/">https://naruyoko.github.io/StudyAndExpandSequence/</a></div>
-  <div>Version 1.0.3</div>
+  <div>Version 1.0.4</div>
 </body>
 </html>
