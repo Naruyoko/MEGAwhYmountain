@@ -782,7 +782,7 @@ function saveSimple(clipboard){
     }
     if (i<lines.length-1) encodedInput+=";";
   }
-  history.pushState(encodedInput,"","?"+encodedInput);
+  history.pushState(null,"",location.origin+location.pathname+"#"+encodedInput);
   if (clipboard) copyLocationToClipboard();
 }
 function saveDetailed(clipboard){
@@ -792,7 +792,7 @@ function saveDetailed(clipboard){
     state[optionName]=config[optionName];
   }
   var encodedState=btoa(JSON.stringify(state)).replace(/\+/g,"-").replace(/\//g,"_").replace(/\=/g,"");
-  history.pushState(state,"","?"+encodedState);
+  history.pushState(null,"",location.origin+location.pathname+"#"+encodedState);
   if (clipboard) copyLocationToClipboard();
 }
 function copyLocationToClipboard(){
@@ -805,7 +805,8 @@ function copyLocationToClipboard(){
   copyarea.style.display="none";
 }
 function load(){
-  var encodedState=location.search.substring(1);
+  if (location.search) location.replace(location.origin+location.pathname+"#"+(location.hash||location.search).substring(1));
+  var encodedState=location.hash.substring(1);
   if (!encodedState) return;
   try{
     var state=encodedState.replace(/\-/g,"+").replace(/_/g,"/");
@@ -819,7 +820,7 @@ function load(){
       console.log(state);
       for (var i=0;i<options.length;i++){
         var optionName=options[i];
-        if (state[optionName]){
+        if (state.hasOwnProperty(optionName)){
           var elem=document.getElementById(optionName);
           if (elem.type=="number") elem.value=state[optionName];
           else if (elem.type=="text"||optionName=="input") elem.value=state[optionName];
